@@ -81,10 +81,7 @@ return [
 
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            'mailers'   => explode(',', env('MAIL_FAILOVER_ORDER', 'smtp,log')),
             'retry_after' => 60,
         ],
 
