@@ -7,8 +7,8 @@ use App\Http\Controllers\API\AuthController;
 
 
 
-//Route::get('/', fn ($router) => $router->app->version());
-Route::get('health', fn () => response()->json(['status' => 'ok']));
+Route::get('/', fn () => app()->version());
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
     
 Route::controller(AuthController::class)->group(
     function () {
