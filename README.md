@@ -1,61 +1,166 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Auth API (Laravel + Sanctum)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Email-OTP authentication API built with Laravel. Provides endpoints for user registration, email verification via OTP, login, profile management, and selfie uploads. All responses follow a consistent JSON envelope.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 🚀 Quick Start
+#### Install dependencies
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+```
+#### Configure your database & mail in .env
+#### Run migrations
+```bash
+php artisan migrate
+```
+#### Run the server
+```bash
+php artisan serve
+```
+#### Run tests:
+```bash
+php artisan test
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
+## API Overview
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+#### Public Endpoints (Base path: /api)
 
-## Learning Laravel
+| Method | Path                 | Description               |
+| ------ | -------------------- | ------------------------- |
+| POST   | `/auth/register`     | Register user & send OTP  |
+| POST   | `/auth/verify-email` | Verify email with OTP     |
+| POST   | `/auth/resend-otp`   | Resend OTP (60s throttle) |
+| POST   | `/auth/login`        | Login & receive token     |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+#### Protected Endpoints (Authorization: Bearer <token>)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| Method | Path            | Description              |
+| ------ | --------------- | ------------------------ |
+| GET    | `/users/me`     | Fetch authenticated user |
+| POST   | `/users/selfie` | Upload selfie image      |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Health
 
-## Laravel Sponsors
+  * GET /api/ → Laravel version
+  * GET /api/health → { "status": "ok" }
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+  ---
+### Response Format
+```json
+// Success
+{
+  "status": "success",
+  "data": { ... },
+  "message": "Message here"
+}
 
-### Premium Partners
+// Error
+{
+  "status": "error",
+  "message": "What went wrong",
+  "data": { ... } // optional
+}
+```
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### OTP Policy
+  * Testing (default): OTP is logged, not emailed.
 
-## Contributing
+  * Testing (opt-in): If config('mail.send_in_tests') === true, emails are sent.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+  * Local/Dev/Prod: Always emails OTP.
 
-## Code of Conduct
+  * OTPs expire in 5 minutes.
+  
+  * Resend is throttled to once every 60 seconds.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
+### Request Examples
+#### Register
+```bash
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"janedoe","full_name":"Jane Doe","phone":"1234567890","email":"jane@example.com","password":"secret123"}'
+```
+#### Verify Email
+```bash
+curl -X POST http://localhost:8000/api/auth/verify-email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane@example.com","otp":"123456"}'
+```
+#### Login
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane@example.com","password":"secret123"}'
+```
+#### Me (authenticated)
+```bash
+curl http://localhost:8000/api/users/me \
+  -H "Authorization: Bearer <TOKEN>"
+```
+#### Upload Selfie
+```bash
+curl -X POST http://localhost:8000/api/users/selfie \
+  -H "Authorization: Bearer <TOKEN>" \
+  -F "selfie=@/path/to/photo.jpg"
+```
 
-## Security Vulnerabilities
+---
+### Validation Rules
+  * Register: username, full_name, phone, email (unique), password(min:6) | Optional: referral_code, heard_about
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+  * Verify Email: email, otp (numeric)
 
-## License
+  * Resend OTP: email (throttled)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+  * Selfie: image, max 5MB
+
+---
+### 🧪 Testing
+
+Feature tests live in tests/Feature/AuthFlowTest.php. They cover:
+
+  * OTP behavior (send/log, resend, throttle)
+
+  * Register & verify email
+
+  * Login (token issuance)
+
+  * Profile (/users/me)
+
+  * Selfie upload
+
+Run all tests: 
+```bash 
+php artisan test 
+```
+✔ Add a screenshot here showing all tests passing.
+
+---
+### Security Notes
+  * Passwords hashed with bcrypt.
+
+  * OTPs short-lived (5 minutes).
+
+  * Selfies stored on public disk (/storage/selfies/...).
+
+  + For sensitive use, consider private storage + signed URLs.
+
+---
+### Routes Summary
+| Method | Path                     | Description             |
+|--------|--------------------------|-------------------------|
+| POST   | /api/auth/register       | Create user + send OTP  |
+| POST   | /api/auth/verify-email   | Verify OTP              |
+| POST   | /api/auth/resend-otp     | Resend OTP (throttled)  |
+| POST   | /api/auth/login          | Login + token           |
+| GET    | /api/users/me            | Current user            |
+| POST   | /api/users/selfie        | Upload selfie           |
+
+

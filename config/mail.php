@@ -45,7 +45,7 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            'timeout' => env('MAIL_TIMEOUT', 5),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
@@ -81,10 +81,7 @@ return [
 
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            'mailers'   => explode(',', env('MAIL_FAILOVER_ORDER', 'smtp,log')),
             'retry_after' => 60,
         ],
 
