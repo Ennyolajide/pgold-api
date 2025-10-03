@@ -3,6 +3,9 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         beStrictAboutCoversAnnotation="false"
+         verbose="true"
+
 >
     <testsuites>
         <testsuite name="Unit">
@@ -30,5 +33,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="MAIL_MAILER" value="log"/>
+        <env name="MAIL_SEND_IN_TESTS" value="false"/>
     </php>
 </phpunit>
