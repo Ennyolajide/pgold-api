@@ -79,11 +79,9 @@ class AuthController extends BaseController
         }
 
         try {
-            // Fire-and-forget async queue
-            Mail::to($email)->queue(new OtpMail($otp));
+            Mail::to($email)->send(new OtpMail($otp));
         } catch (\Throwable $e) {
-            // Log failure
-            Log::error('Failed to queue OTP email', [
+            Log::error('Failed to send OTP email', [
                 'email' => $email,
                 'otp' => $otp,
                 'error' => $e->getMessage(),
